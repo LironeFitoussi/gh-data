@@ -45,6 +45,12 @@ jobs:
   build:
     needs: [lint, test]
     runs-on: ubuntu-latest
+    outputs:
+        # "steps" refrences to all the steps in the build job
+        # "publish" references to the step with id "publish"
+        # "outputs" references to the outputs of that step
+        # "script-file" is the output defined in the "publish" step like a variable
+        script-file: ${{ steps.publish.outputs.script-file }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -60,6 +66,18 @@ jobs:
 
       - name: Build site
         run: npm run build
+
+      - name: Publish JS filename
+        id: publish
+        run: echo "script-file=$(find dist/assets -name '*.js')" >> $GITHUB_OUTPUT
+        # echo "script-file=index-DSf45fg.js"
+        # setps: {
+        #     publish: {
+        #           output: { || == GITHUB_OUTPUT
+        #               script-file: index-DSf45fg.js
+        #           }
+        #     }
+        # }
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v6
@@ -77,12 +95,15 @@ jobs:
           with:
             name: site-build
         
+        - name: Show build file name
+          run: |
+            echo "Build js file: ${{ needs.build.outputs.script-file}}"
         - name: List files
           run: ls -la
 
         - name: Deploy
           run: |
-            echo "Deploying"
+            echo "Deploying  ${{ needs.build.outputs.script-file}}"
             sleep 3
             echo "Your site is live at https://baba-is-here.com"
 
